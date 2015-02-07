@@ -8,6 +8,7 @@
 'use strict';
 
 var pathRe = require('glob-path-regex');
+var isGlob = require('is-glob');
 
 /**
  * Parse a glob pattern into sections
@@ -22,8 +23,10 @@ var pathRe = require('glob-path-regex');
  */
 
 module.exports = function parseGlob(pattern) {
+  // leave `pattern` unmodified
   var glob = pattern;
   var tok = {};
+  tok.isGlob = isGlob(pattern);
 
   var braces = pattern.indexOf('{') !== -1;
   if (braces) {
@@ -67,11 +70,11 @@ module.exports = function parseGlob(pattern) {
   tok.ext = tok.extname.split('.').slice(-1)[0];
 
   if (braces) {
-    tok.dirname = unescape(tok.dirname);
-    tok.filename = unescape(tok.filename);
-    tok.basename = unescape(tok.basename);
-    tok.extname = unescape(tok.extname);
-    tok.ext = unescape(tok.ext);
+    tok.dirname = tok.dirname ? unescape(tok.dirname) : '';
+    tok.filename = tok.filename ? unescape(tok.filename) : '';
+    tok.basename = tok.basename ? unescape(tok.basename) : '';
+    tok.extname = tok.extname ? unescape(tok.extname) : '';
+    tok.ext = tok.ext ? unescape(tok.ext) : '';
   }
 
   tok.dotfiles = tok.filename.charAt(0) === '.';

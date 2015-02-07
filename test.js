@@ -10,6 +10,15 @@
 var assert = require('assert');
 var parse = require('./');
 
+it('should detect when the pattern is a glob pattern:', function () {
+  assert.equal(parse('a.min.js').isGlob, false);
+  assert.equal(parse('*.min.js').isGlob, true);
+  assert.equal(parse('foo/{a,b}.min.js').isGlob, true);
+  assert.equal(parse('foo/(a|b).min.js').isGlob, true);
+  assert.equal(parse('foo/[a-b].min.js').isGlob, true);
+  assert.equal(parse('!foo').isGlob, true);
+});
+
 it('should get a filename from a complex pattern:', function () {
   assert.equal(parse('*.min.js').dirname, '');
   assert.equal(parse('/a/b/c').dirname, '/a/b/');
