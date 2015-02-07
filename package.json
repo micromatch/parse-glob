@@ -1,0 +1,40 @@
+{
+  "name": "parse-glob",
+  "description": "Parse a glob pattern into an object.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/jonschlinkert/parse-glob",
+  "author": {
+    "name": "Jon Schlinkert",
+    "url": "https://github.com/jonschlinkert"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jonschlinkert/parse-glob.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/parse-glob/issues"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/jonschlinkert/parse-glob/blob/master/LICENSE"
+  },
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "glob-path-regex": "^1.0.0",
+    "is-glob": "^1.1.0"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*"
+  },
+  "keywords": []
+}
