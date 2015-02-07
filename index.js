@@ -26,7 +26,10 @@ module.exports = function parseGlob(pattern) {
   // leave `pattern` unmodified
   var glob = pattern;
   var tok = {};
+
+  tok.pattern = pattern;
   tok.isGlob = isGlob(pattern);
+  tok.isNegated = pattern.charAt(0) === '!';
 
   var braces = pattern.indexOf('{') !== -1;
   if (braces) {
@@ -34,7 +37,6 @@ module.exports = function parseGlob(pattern) {
   }
 
   if (!/(\/|\*\*)/.test(glob)) {
-    tok.pattern = pattern;
     tok.dirname = '';
     tok.filename = pattern;
 
@@ -49,9 +51,7 @@ module.exports = function parseGlob(pattern) {
 
   } else {
     var m = pathRe().exec(glob) || [];
-    tok.pattern = pattern;
     tok.dirname = m[1];
-
     tok.filename = glob.substr(tok.dirname.length);
     var dot = tok.filename.indexOf('.', 1);
     if (dot !== -1) {

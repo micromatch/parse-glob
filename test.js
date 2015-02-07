@@ -19,6 +19,15 @@ it('should detect when the pattern is a glob pattern:', function () {
   assert.equal(parse('!foo').isGlob, true);
 });
 
+it('should detect when a pattern is negated:', function () {
+  assert.equal(parse('a.min.js').isNegated, false);
+  assert.equal(parse('!*.min.js').isNegated, true);
+  assert.equal(parse('!foo/{a,b}.min.js').isNegated, true);
+  assert.equal(parse('!foo/(a|b).min.js').isNegated, true);
+  assert.equal(parse('!foo/[a-b].min.js').isNegated, true);
+  assert.equal(parse('foo').isNegated, false);
+});
+
 it('should get a filename from a complex pattern:', function () {
   assert.equal(parse('*.min.js').dirname, '');
   assert.equal(parse('/a/b/c').dirname, '/a/b/');
