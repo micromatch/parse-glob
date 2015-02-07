@@ -74,7 +74,9 @@ module.exports = function parseGlob(pattern) {
     tok.ext = unescape(tok.ext);
   }
 
-  tok.dotglob = tok.filename.charAt(0) === '.';
+  tok.dotfiles = tok.filename.charAt(0) === '.';
+  tok.dotdirs = tok.dirname.indexOf('/.') !== -1
+    || tok.dirname.charAt(0) === '.';
   return tok;
 };
 

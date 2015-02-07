@@ -11,11 +11,161 @@ var assert = require('assert');
 var parse = require('./');
 
 it('should get a filename from a complex pattern:', function () {
-  assert.equal(parse('a/b/.{c,/.gitignore}').filename, '.{c,/.gitignore}');
+  assert.equal(parse('*.min.js').dirname, '');
+  assert.equal(parse('/a/b/c').dirname, '/a/b/');
+  assert.equal(parse('/a/b/c/').dirname, '/a/b/c/');
+  assert.equal(parse('/a/b/{c,d}/').dirname, '/a/b/{c,d}/');
+  assert.equal(parse('/a/b/{c,d}/*.js').dirname, '/a/b/{c,d}/');
+  assert.equal(parse('/a/b/{c,d}/*.min.js').dirname, '/a/b/{c,d}/');
+  assert.equal(parse('/a/b/{c,d}/e.f.g/').dirname, '/a/b/{c,d}/e.f.g/');
+  assert.equal(parse('/a/b/{c,/foo.js}/e.f.g/').dirname, '/a/b/{c,/foo.js}/e.f.g/');
+  assert.equal(parse('./{a/b/{c,/foo.js}/e.f.g}').dirname, './{a/b/{c,/foo.js}/e.f.g}');
+  assert.equal(parse('[a-c]b*').dirname, '');
+  assert.equal(parse('[a-j]*[^c]').dirname, '');
+  assert.equal(parse('[a-j]*[^c]b/c').dirname, '[a-j]*[^c]b/');
+  assert.equal(parse('[a-j]*[^c]bc').dirname, '');
+  assert.equal(parse('a/b/{c,./d}/e/f.g').dirname, 'a/b/{c,./d}/e/');
+  assert.equal(parse('a/b/{c,.gitignore,{a,./b}}/{a,b}/abc.foo.js').dirname, 'a/b/{c,.gitignore,{a,./b}}/{a,b}/');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/*.foo.js').dirname, 'a/b/{c,.gitignore,{a,b}}/{a,b}/');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/abc.foo.js').dirname, 'a/b/{c,.gitignore,{a,b}}/{a,b}/');
+  assert.equal(parse('a/b/{c,.gitignore}').dirname, 'a/b/');
+  assert.equal(parse('a/b/{c,/.gitignore}').dirname, 'a/b/');
+  assert.equal(parse('a/b/{c,/d}/e/f.g').dirname, 'a/b/{c,/d}/e/');
+  assert.equal(parse('a/b/{c,/gitignore}').dirname, 'a/b/');
+  assert.equal(parse('a/b/{c,d}').dirname, 'a/b/');
+  assert.equal(parse('a/b/{c,d}/').dirname, 'a/b/{c,d}/');
+  assert.equal(parse('a/b/{c,d}/*.js').dirname, 'a/b/{c,d}/');
+  assert.equal(parse('a/b/{c,d}/*.min.js').dirname, 'a/b/{c,d}/');
+  assert.equal(parse('a/b/{c,d}/e.f.g/').dirname, 'a/b/{c,d}/e.f.g/');
+  assert.equal(parse('a/b/{c,d}/e/f.g').dirname, 'a/b/{c,d}/e/');
+  assert.equal(parse('a').dirname, '');
+  assert.equal(parse('a/**/b/*.{foo,bar}').dirname, 'a/**/b/');
+  assert.equal(parse('a/b/*.{foo,bar}').dirname, 'a/b/');
+  assert.equal(parse('a/b/.gitignore').dirname, 'a/b/');
+  assert.equal(parse('a/b/.{c,.gitignore}').dirname, 'a/b/');
+  assert.equal(parse('a/b/.{c,/.gitignore}').dirname, 'a/b/');
+  assert.equal(parse('a/b/.{foo,bar}').dirname, 'a/b/');
+  assert.equal(parse('a/b/c').dirname, 'a/b/');
+  assert.equal(parse('a/b/c.d/e.md').dirname, 'a/b/c.d/');
+  assert.equal(parse('a/b/c.md').dirname, 'a/b/');
+  assert.equal(parse('a/b/c.min.js').dirname, 'a/b/');
+  assert.equal(parse('a/b/c/').dirname, 'a/b/c/');
+  assert.equal(parse('a/b/c/d.e.f/g.min.js').dirname, 'a/b/c/d.e.f/');
+  assert.equal(parse('a/b/c/d.md').dirname, 'a/b/c/');
+  assert.equal(parse('c.md').dirname, '');
 });
 
-it('should get an extension from a complex pattern:', function () {
+it('should get a filename from a complex pattern:', function () {
+  assert.equal(parse('*.min.js').filename, '*.min.js');
+  assert.equal(parse('/a/b/{c,d}/').filename, '');
+  assert.equal(parse('/a/b/{c,d}/*.js').filename, '*.js');
+  assert.equal(parse('/a/b/{c,d}/*.min.js').filename, '*.min.js');
+  assert.equal(parse('/a/b/{c,d}/e.f.g/').filename, '');
+  assert.equal(parse('[a-j]*[^c]').filename, '[a-j]*[^c]');
+  assert.equal(parse('[a-j]*[^c]bc').filename, '[a-j]*[^c]bc');
+  assert.equal(parse('a/**/b/*.{foo,bar}').filename, '*.{foo,bar}');
+  assert.equal(parse('a/b/*.{foo,bar}').filename, '*.{foo,bar}');
+  assert.equal(parse('a/b/.{c,.gitignore}').filename, '.{c,.gitignore}');
+  assert.equal(parse('a/b/.{c,/.gitignore}').filename, '.{c,/.gitignore}');
+  assert.equal(parse('a/b/.{foo,bar}').filename, '.{foo,bar}');
+  assert.equal(parse('a/b/{c,./d}/e/f.g').filename, 'f.g');
+  assert.equal(parse('a/b/{c,.gitignore,{a,./b}}/{a,b}/abc.foo.js').filename, 'abc.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/*.foo.js').filename, '*.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/abc.foo.js').filename, 'abc.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore}').filename, '{c,.gitignore}');
+  assert.equal(parse('a/b/{c,/.gitignore}').filename, '{c,/.gitignore}');
+  assert.equal(parse('a/b/{c,/d}/e/f.g').filename, 'f.g');
+  assert.equal(parse('a/b/{c,/gitignore}').filename, '{c,/gitignore}');
+  assert.equal(parse('a/b/{c,d}').filename, '{c,d}');
+  assert.equal(parse('a/b/{c,d}/').filename, '');
+  assert.equal(parse('a/b/{c,d}/*.js').filename, '*.js');
+  assert.equal(parse('a/b/{c,d}/*.min.js').filename, '*.min.js');
+  assert.equal(parse('a/b/{c,d}/e.f.g/').filename, '');
+  assert.equal(parse('a/b/{c,d}/e/f.g').filename, 'f.g');
+});
+
+it('should get a basename from a complex pattern:', function () {
+  assert.equal(parse('*.min.js').basename, '*');
+  assert.equal(parse('/a/b/c').basename, 'c');
+  assert.equal(parse('/a/b/c/').basename, '');
+  assert.equal(parse('/a/b/{c,d}/').basename, '');
+  assert.equal(parse('/a/b/{c,d}/*.js').basename, '*');
+  assert.equal(parse('/a/b/{c,d}/*.min.js').basename, '*');
+  assert.equal(parse('/a/b/{c,d}/e.f.g/').basename, '');
+  assert.equal(parse('[a-c]b*').basename, '[a-c]b*');
+  assert.equal(parse('a').basename, 'a');
+  assert.equal(parse('a/**/b/*.{foo,bar}').basename, '*');
+  assert.equal(parse('a/b/*.{foo,bar}').basename, '*');
+  assert.equal(parse('a/b/.gitignore').basename, '');
+  assert.equal(parse('a/b/.{c,.gitignore}').basename, '');
+  assert.equal(parse('a/b/.{c,/.gitignore}').basename, '');
+  assert.equal(parse('a/b/.{foo,bar}').basename, '');
+  assert.equal(parse('a/b/c').basename, 'c');
+  assert.equal(parse('a/b/c.d/e.md').basename, 'e');
+  assert.equal(parse('a/b/c.md').basename, 'c');
+  assert.equal(parse('a/b/c.min.js').basename, 'c');
+  assert.equal(parse('a/b/c/').basename, '');
+  assert.equal(parse('a/b/c/d.e.f/g.min.js').basename, 'g');
+  assert.equal(parse('a/b/c/d.md').basename, 'd');
+  assert.equal(parse('a/b/{c,./d}/e/f.g').basename, 'f');
+  assert.equal(parse('a/b/{c,.gitignore,{a,./b}}/{a,b}/abc.foo.js').basename, 'abc');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/*.foo.js').basename, '*');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/abc.foo.js').basename, 'abc');
+  assert.equal(parse('a/b/{c,.gitignore}').basename, '{c,.gitignore}');
+  assert.equal(parse('a/b/{c,/.gitignore}').basename, '{c,/.gitignore}');
+  assert.equal(parse('a/b/{c,/d}/e/f.g').basename, 'f');
+  assert.equal(parse('a/b/{c,/gitignore}').basename, '{c,/gitignore}');
+  assert.equal(parse('a/b/{c,d}').basename, '{c,d}');
+  assert.equal(parse('a/b/{c,d}/').basename, '');
+  assert.equal(parse('a/b/{c,d}/*.js').basename, '*');
+  assert.equal(parse('a/b/{c,d}/*.min.js').basename, '*');
+  assert.equal(parse('a/b/{c,d}/e.f.g/').basename, '');
+  assert.equal(parse('a/b/{c,d}/e/f.g').basename, 'f');
+  assert.equal(parse('c.md').basename, 'c');
+});
+
+it('should get an extname from a complex pattern:', function () {
+  assert.equal(parse('*.min.js').extname, '.min.js');
+  assert.equal(parse('/a/b/c').extname, '');
+  assert.equal(parse('/a/b/c/').extname, '');
+  assert.equal(parse('/a/b/{c,d}/').extname, '');
+  assert.equal(parse('/a/b/{c,d}/*.js').extname, '.js');
+  assert.equal(parse('/a/b/{c,d}/*.min.js').extname, '.min.js');
+  assert.equal(parse('/a/b/{c,d}/e.f.g/').extname, '');
+  assert.equal(parse('[a-c]b*').extname, '');
+  assert.equal(parse('[a-j]*[^c]bc').extname, '');
+  assert.equal(parse('a').extname, '');
+  assert.equal(parse('a/**/b/*.{foo,bar}').extname, '.{foo,bar}');
+  assert.equal(parse('a/b/*.{foo,bar}').extname, '.{foo,bar}');
+  assert.equal(parse('a/b/.gitignore').extname, '.gitignore');
+  assert.equal(parse('a/b/.{c,.gitignore}').extname, '.{c,.gitignore}');
   assert.equal(parse('a/b/.{c,/.gitignore}').extname, '.{c,/.gitignore}');
+  assert.equal(parse('a/b/.{foo,bar}').extname, '.{foo,bar}');
+  assert.equal(parse('a/b/c').extname, '');
+  assert.equal(parse('a/b/c.d/e.md').extname, '.md');
+  assert.equal(parse('a/b/c.md').extname, '.md');
+  assert.equal(parse('a/b/c.min.js').extname, '.min.js');
+  assert.equal(parse('a/b/c/').extname, '');
+  assert.equal(parse('a/b/c/d.e.f/g.min.js').extname, '.min.js');
+  assert.equal(parse('a/b/c/d.md').extname, '.md');
+  assert.equal(parse('a/b/{c,./d}/e/f.g').extname, '.g');
+  assert.equal(parse('a/b/{c,./d}/e/f.min.g').extname, '.min.g');
+  assert.equal(parse('a/b/{c,.gitignore,{a,./b}}/{a,b}/abc.foo.js').extname, '.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/*.foo.js').extname, '.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore,{a,b}}/{a,b}/abc.foo.js').extname, '.foo.js');
+  assert.equal(parse('a/b/{c,.gitignore}').extname, '');
+  assert.equal(parse('a/b/{c,/.gitignore}').extname, '');
+  assert.equal(parse('a/b/{c,/d}/e/f.g').extname, '.g');
+  assert.equal(parse('a/b/{c,/d}/e/f.min.g').extname, '.min.g');
+  assert.equal(parse('a/b/{c,/gitignore}').extname, '');
+  assert.equal(parse('a/b/{c,d}').extname, '');
+  assert.equal(parse('a/b/{c,d}/').extname, '');
+  assert.equal(parse('a/b/{c,d}/*.js').extname, '.js');
+  assert.equal(parse('a/b/{c,d}/*.min.js').extname, '.min.js');
+  assert.equal(parse('a/b/{c,d}/e.f.g/').extname, '');
+  assert.equal(parse('a/b/{c,d}/e/f.g').extname, '.g');
+  assert.equal(parse('a/b/{c,d}/e/f.min.g').extname, '.min.g');
+  assert.equal(parse('c.md').extname, '.md');
 });
 
 
@@ -82,6 +232,19 @@ it('should parse a path with a brace pattern in the dirname:', function () {
   assert.equal(parse('[a-j]*[^c]bc').pattern, '[a-j]*[^c]bc');
   assert.equal(parse('[a-j]*[^c]bc').dirname, '');
   assert.equal(parse('[a-j]*[^c]bc').filename, '[a-j]*[^c]bc');
+});
+
+it('should detect when `dotdirs` are defined:', function () {
+  assert.equal(parse('a/b/.git/').dotdirs, true);
+  assert.equal(parse('a/b/git/').dotdirs, false);
+  assert.equal(parse('a/b/.git/').dotfiles, false);
+});
+
+it('should detect when `dotfiles` are defined:', function () {
+  assert.equal(parse('a/b/.gitignore').dotfiles, true);
+  assert.equal(parse('a/b/.git').dotfiles, true);
+  assert.equal(parse('a/b/.gitignore').dotdirs, false);
+  assert.equal(parse('a/b/.git').dotdirs, false);
 });
 
 it('should match a glob path ending with a slash:', function () {
