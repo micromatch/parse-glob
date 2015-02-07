@@ -28,7 +28,7 @@ Returns:
   ext: 'js',
 
   // detects when a glob pattern intentionally 
-  // specifies dotfiles
+  // specifies dotfiles or dot directories (e.g. './.git/')
   dotfiles: false,
   dotdirs: false }
 ```
