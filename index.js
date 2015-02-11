@@ -36,9 +36,11 @@ module.exports = function parseGlob(pattern) {
     glob = glob.substr(0, braces) + escape(glob.substr(braces));
   }
 
-  if (!/(\/|\*\*)/.test(glob)) {
+  tok.globstar = glob.indexOf('**') !== -1;
+  if (!/\//.test(glob) && !tok.globstar) {
     tok.dirname = '';
     tok.filename = pattern;
+    tok.globstar = false;
 
     var basename = /^([^.]*)/.exec(glob);
     if (basename) {
