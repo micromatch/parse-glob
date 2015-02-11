@@ -86,10 +86,14 @@ module.exports = function parseGlob(pattern) {
 function escape(str) {
   return str.replace(/.*\{([^}]*?)}.*$/g, function (match, inner) {
     if (!inner) { return match; }
-    var temp = inner.replace(/\//g, '__ESC_SLASH__');
-    temp = temp.replace(/\./g, '__ESC_DOT__');
-    return match.replace(new RegExp(inner, 'g'), temp);
+    return match.split(inner).join(esc(inner));
   });
+}
+
+function esc(str) {
+  str = str.split('/').join('__ESC_SLASH__');
+  str = str.split('.').join('__ESC_DOT__');
+  return str;
 }
 
 function unescape(str) {
