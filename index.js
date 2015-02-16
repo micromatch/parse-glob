@@ -23,38 +23,47 @@ var isGlob = require('is-glob');
  */
 
 module.exports = function parseGlob(pattern) {
-  // leave `pattern` unmodified
   var glob = pattern;
   var tok = {};
 
+  // store original pattern
+  tok.original = pattern;
   tok.pattern = pattern;
-  tok.isGlob = isGlob(pattern);
-  tok.isNegated = pattern.charAt(0) === '!';
 
-  var braces = pattern.indexOf('{') !== -1;
+
+  // is the pattern actually a glob?
+  tok.isGlob = isGlob(glob);
+
+  // is it a negation pattern?
+  tok.isNegated = glob.charAt(0) === '!';
+
+  // does the pattern contain braces?
+  var braces = glob.indexOf('{') !== -1;
   if (braces) {
     glob = glob.substr(0, braces) + escape(glob.substr(braces));
   }
 
+  // does the pattern contain a globstar (`**`)?
   tok.globstar = glob.indexOf('**') !== -1;
-  if (!/\//.test(glob) && !tok.globstar) {
+  if (glob.indexOf('/') === -1 && !tok.globstar) {
     tok.dirname = '';
-    tok.filename = pattern;
+    tok.filename = tok.original;
     tok.globstar = false;
 
     var basename = /^([^.]*)/.exec(glob);
     if (basename) {
-      tok.basename = basename[0];
+      tok.basename = basename[0] ? unescape(basename[0]) : '';
       tok.extname = glob.substr(tok.basename.length);
     } else {
-      tok.basename = glob;
+      tok.basename = tok.original;
       tok.extname = '';
     }
-
+    tok.ext = tok.extname.split('.').slice(-1)[0];
   } else {
     var m = pathRe().exec(glob) || [];
     tok.dirname = m[1];
     tok.filename = glob.substr(tok.dirname.length);
+
     var dot = tok.filename.indexOf('.', 1);
     if (dot !== -1) {
       tok.basename = tok.filename.substr(0, dot);
@@ -67,23 +76,40 @@ module.exports = function parseGlob(pattern) {
       tok.basename = tok.filename;
       tok.extname = '';
     }
-  }
 
-  tok.ext = tok.extname.split('.').slice(-1)[0];
-
-  if (braces) {
-    tok.dirname = tok.dirname ? unescape(tok.dirname) : '';
-    tok.filename = tok.filename ? unescape(tok.filename) : '';
-    tok.basename = tok.basename ? unescape(tok.basename) : '';
-    tok.extname = tok.extname ? unescape(tok.extname) : '';
-    tok.ext = tok.ext ? unescape(tok.ext) : '';
+    tok.ext = tok.extname.split('.').slice(-1)[0];
+    if (braces) {
+      tok = unscapeBraces(tok);
+    }
   }
 
   tok.dotfiles = tok.filename.charAt(0) === '.';
-  tok.dotdirs = tok.dirname.indexOf('/.') !== -1
-    || tok.dirname.charAt(0) === '.';
+  tok = dotdirs(tok);
+    console.log(tok)
+
+  tok.parsed = true;
   return tok;
 };
+
+function dotdirs(tok) {
+  tok.dotdirs = false;
+  if (tok.dirname.indexOf('/.') !== -1) {
+    tok.dotdirs = true;
+  }
+  if (tok.dirname.charAt(0) === '.' && tok.dirname.charAt(1) !== '/') {
+    tok.dotdirs = true;
+  }
+  return tok;
+}
+
+function unscapeBraces(tok) {
+  tok.dirname = tok.dirname ? unescape(tok.dirname) : '';
+  tok.filename = tok.filename ? unescape(tok.filename) : '';
+  tok.basename = tok.basename ? unescape(tok.basename) : '';
+  tok.extname = tok.extname ? unescape(tok.extname) : '';
+  tok.ext = tok.ext ? unescape(tok.ext) : '';
+  return tok;
+}
 
 function escape(str) {
   return str.replace(/.*\{([^}]*?)}.*$/g, function (match, inner) {
@@ -101,5 +127,12 @@ function esc(str) {
 function unescape(str) {
   str = str.split('__ESC_SLASH__').join('/');
   str = str.split('__ESC_DOT__').join('.');
+  return str;
+}
+
+function trim(str, ch) {
+  if (str.slice(-1) === ch) {
+    return str[str.length - ch.length];
+  }
   return str;
 }
