@@ -1,7 +1,7 @@
 {
   "name": "parse-glob",
-  "description": "Parse a glob pattern into an object of path parts.",
-  "version": "1.2.0",
+  "description": "Parse a glob pattern into an object of tokens.",
+  "version": "2.0.0",
   "homepage": "https://github.com/jonschlinkert/parse-glob",
   "author": {
     "name": "Jon Schlinkert",
