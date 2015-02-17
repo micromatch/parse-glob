@@ -11,7 +11,15 @@ var pathRe = require('glob-path-regex');
 var isGlob = require('is-glob');
 
 /**
- * Parse a glob pattern into sections
+ * Expose `parseGlob` and cache results in memory
+ */
+
+module.exports = function (pattern, getbase) {
+  return globCache(parseGlob, pattern, getbase);
+};
+
+/**
+ * Parse a glob pattern into tokens.
  *
  * When no paths or '**' are in the glob, we use a
  * different strategy for parsing the filename, since
@@ -22,94 +30,199 @@ var isGlob = require('is-glob');
  *  - `(**|*.js)`
  */
 
-module.exports = function parseGlob(pattern) {
+function parseGlob(pattern, getbase) {
   var glob = pattern;
-  var tok = {};
+  var path = {};
+  var tok = {path: {}, is: {}, match: {}};
 
   // store original pattern
   tok.original = pattern;
   tok.pattern = pattern;
-
+  path.whole = tok.pattern;
 
   // is the pattern actually a glob?
-  tok.isGlob = isGlob(glob);
+  tok.is.glob = isGlob(glob);
 
   // is it a negation pattern?
-  tok.isNegated = glob.charAt(0) === '!';
+  tok.is.negated = glob.charAt(0) === '!';
 
   // does the pattern contain braces?
   var braces = glob.indexOf('{') !== -1;
-  if (braces) {
+  if (tok.is.glob && braces) {
+    tok.is.braces = true;
     glob = glob.substr(0, braces) + escape(glob.substr(braces));
   }
 
   // does the pattern contain a globstar (`**`)?
-  tok.globstar = glob.indexOf('**') !== -1;
-  if (glob.indexOf('/') === -1 && !tok.globstar) {
-    tok.dirname = '';
-    tok.filename = tok.original;
-    tok.globstar = false;
+  tok.is.globstar = glob.indexOf('**') !== -1;
+
+  // if there is no `/` and no `**`, this means our
+  // pattern can only match file names
+  if (glob.indexOf('/') === -1 && !tok.is.globstar) {
+    path.dirname = '';
+    path.filename = tok.original;
+    tok.is.globstar = false;
 
     var basename = /^([^.]*)/.exec(glob);
     if (basename) {
-      tok.basename = basename[0] ? unescape(basename[0]) : '';
-      tok.extname = glob.substr(tok.basename.length);
+      path.basename = basename[0] ? unescape(basename[0]) : '';
+      path.extname = glob.substr(path.basename.length);
     } else {
-      tok.basename = tok.original;
-      tok.extname = '';
+      path.basename = tok.original;
+      path.extname = '';
     }
-    tok.ext = tok.extname.split('.').slice(-1)[0];
+    path.ext = path.extname.split('.').slice(-1)[0];
+
+  // we either have a `/` or `**`
   } else {
     var m = pathRe().exec(glob) || [];
-    tok.dirname = m[1];
-    tok.filename = glob.substr(tok.dirname.length);
+    path.dirname = m[1];
+    path.filename = glob.substr(path.dirname.length);
 
-    var dot = tok.filename.indexOf('.', 1);
+    // does the filename have a `.`?
+    var dot = path.filename.indexOf('.', 1);
     if (dot !== -1) {
-      tok.basename = tok.filename.substr(0, dot);
-      tok.extname = tok.filename.substr(dot);
-      tok.ext = tok.extname.substr(tok.extname.indexOf('.', 1));
-    } else if (tok.filename.charAt(0) === '.') {
-      tok.basename = '';
-      tok.extname = tok.filename;
+      path.basename = path.filename.substr(0, dot);
+      path.extname = path.filename.substr(dot);
+      path.ext = path.extname.substr(path.extname.indexOf('.', 1));
+    } else if (path.filename.charAt(0) === '.') {
+      path.basename = '';
+      path.extname = path.filename;
     } else {
-      tok.basename = tok.filename;
-      tok.extname = '';
+      path.basename = path.filename;
+      path.extname = '';
     }
 
-    tok.ext = tok.extname.split('.').slice(-1)[0];
+    path.ext = path.extname.split('.').slice(-1)[0];
+
+    // remove any escaping that was applied for braces
     if (braces) {
-      tok = unscapeBraces(tok);
+      path = unscapeBraces(path);
     }
   }
 
-  tok.dotfiles = tok.filename.charAt(0) === '.';
-  tok = dotdirs(tok);
-    console.log(tok)
+  tok.is.dotfile = path.filename.charAt(0) === '.';
+  tok = matchesDotdirs(tok, path);
+  tok.path = path;
 
-  tok.parsed = true;
-  return tok;
-};
+  // get the `base` from glob pattern
+  if (getbase) {
+    var segs = findBase(tok);
+    tok.pattern = segs.pattern;
+    tok.base = segs.base;
 
-function dotdirs(tok) {
-  tok.dotdirs = false;
-  if (tok.dirname.indexOf('/.') !== -1) {
-    tok.dotdirs = true;
+    if (tok.is.glob === false) {
+      tok.base = tok.path.dirname;
+      tok.pattern = tok.path.filename;
+    }
   }
-  if (tok.dirname.charAt(0) === '.' && tok.dirname.charAt(1) !== '/') {
-    tok.dotdirs = true;
+
+  return tok;
+}
+
+/**
+ * Updates the tokens to reflect if the pattern
+ * matches dot-directories
+ *
+ * @param  {Object} `tok` The tokens object
+ * @param  {Object} `path` The path object
+ * @return {Object}
+ */
+
+function matchesDotdirs(tok, path) {
+  tok.is.dotdir = false;
+  if (path.dirname.indexOf('/.') !== -1) {
+    tok.is.dotdir = true;
+  }
+  if (path.dirname.charAt(0) === '.' && path.dirname.charAt(1) !== '/') {
+    tok.is.dotdir = true;
   }
   return tok;
 }
 
-function unscapeBraces(tok) {
-  tok.dirname = tok.dirname ? unescape(tok.dirname) : '';
-  tok.filename = tok.filename ? unescape(tok.filename) : '';
-  tok.basename = tok.basename ? unescape(tok.basename) : '';
-  tok.extname = tok.extname ? unescape(tok.extname) : '';
-  tok.ext = tok.ext ? unescape(tok.ext) : '';
-  return tok;
+/**
+ * Unescape brace patterns in each segment on the
+ * `path` object.
+ *
+ * TODO: this can be reduced by only escaping/unescaping
+ * segments that need to be escaped based on whether
+ * or not the pattern has a directory in it.
+ *
+ * @param  {Object} `path`
+ * @return {Object}
+ */
+
+function unscapeBraces(path) {
+  path.dirname = path.dirname ? unescape(path.dirname) : '';
+  path.filename = path.filename ? unescape(path.filename) : '';
+  path.basename = path.basename ? unescape(path.basename) : '';
+  path.extname = path.extname ? unescape(path.extname) : '';
+  path.ext = path.ext ? unescape(path.ext) : '';
+  return path;
 }
+
+/**
+ * Extract the `base` path from a glob
+ * pattern.
+ *
+ * @param  {Object} `tok` The tokens object
+ * @return {Object}
+ */
+
+function findBase(tok) {
+  var glob = tok.pattern;
+  var res = {base: '', pattern: glob};
+
+  var segs = glob.split('/');
+  var len = segs.length, i = 0;
+  var base = [];
+
+  while (len--) {
+    var seg = segs[i++];
+
+    if (!seg || isGlob(seg)) {
+      break;
+    }
+    base.push(seg);
+  }
+
+  if (i === 0) { return null; }
+
+  var num = (segs.length - base.length);
+  var end = base.join('/');
+  if (end.indexOf('./') === 0) {
+    end = end.slice(2);
+  }
+
+  res.base = end;
+  res.pattern = segs.slice(-num).join('/');
+  return res;
+}
+
+/**
+ * Cache the glob string to avoid parsing the same
+ * pattern more than once.
+ *
+ * @param  {Function} fn
+ * @param  {String} pattern
+ * @param  {Options} options
+ * @return {RegExp}
+ */
+
+function globCache(fn, pattern, getbase) {
+  var key = pattern + (getbase || '');
+  return cache[key] || (cache[key] = fn(pattern, getbase));
+}
+
+/**
+ * Expose the glob `cache`
+ */
+
+var cache = module.exports.cache = {};
+
+/**
+ * Escape/unescape utils
+ */
 
 function escape(str) {
   return str.replace(/.*\{([^}]*?)}.*$/g, function (match, inner) {
@@ -131,8 +244,8 @@ function unescape(str) {
 }
 
 function trim(str, ch) {
-  if (str.slice(-1) === ch) {
-    return str[str.length - ch.length];
+  if (str.slice(-ch.length)[0] === ch) {
+    return str.slice(0, str.length - ch.length);
   }
   return str;
 }
