@@ -14,9 +14,6 @@ function getBase(glob) {
   return parse(glob, true);
 }
 
-console.log(parse('a/b/d/e'))
-
-
 describe('`is` object:', function () {
   it('should detect when the pattern is a glob pattern:', function () {
     assert.equal(parse('a.min.js').is.glob, false);

@@ -40,21 +40,16 @@ function parseGlob(pattern, getbase) {
   tok.pattern = pattern;
   path.whole = tok.pattern;
 
-  // is the pattern actually a glob?
-  tok.is.glob = isGlob(glob);
+  // Boolean values
+  tok.is.glob      = isGlob(glob);
+  tok.is.negated   = glob.charAt(0) === '!';
+  tok.is.globstar  = glob.indexOf('**') !== -1;
 
-  // is it a negation pattern?
-  tok.is.negated = glob.charAt(0) === '!';
-
-  // does the pattern contain braces?
   var braces = glob.indexOf('{') !== -1;
   if (tok.is.glob && braces) {
     tok.is.braces = true;
     glob = glob.substr(0, braces) + escape(glob.substr(braces));
   }
-
-  // does the pattern contain a globstar (`**`)?
-  tok.is.globstar = glob.indexOf('**') !== -1;
 
   // if there is no `/` and no `**`, this means our
   // pattern can only match file names
@@ -65,13 +60,17 @@ function parseGlob(pattern, getbase) {
 
     var basename = /^([^.]*)/.exec(glob);
     if (basename) {
-      path.basename = basename[0] ? unescape(basename[0]) : '';
+      path.basename = basename[0] || '';
       path.extname = glob.substr(path.basename.length);
     } else {
       path.basename = tok.original;
       path.extname = '';
     }
+
     path.ext = path.extname.split('.').slice(-1)[0];
+    if (braces) {
+      path.basename = unescape(path.basename);
+    }
 
   // we either have a `/` or `**`
   } else {
@@ -116,7 +115,6 @@ function parseGlob(pattern, getbase) {
       tok.pattern = tok.path.filename;
     }
   }
-
   return tok;
 }
 
