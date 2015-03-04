@@ -1,8 +1,8 @@
-/**
+/*!
  * parse-glob <https://github.com/jonschlinkert/parse-glob>
  *
- * Copyright (c) 2015 Jon Schlinkert.
- * Licensed under the MIT license.
+ * Copyright (c) 2015, Jon Schlinkert.
+ * Licensed under the MIT License.
  */
 
 'use strict';
@@ -65,70 +65,70 @@ describe('`is` object:', function () {
 
 describe('should get a base path:', function () {
   it('should extract a base path from a glob pattern:', function () {
-    assert.equal(getBase('.*').base, '');
+    assert.equal(getBase('.*').base, '.');
     assert.equal(getBase('.*').pattern, '.*');
 
     assert.equal(getBase('./*').base, '.');
     assert.equal(getBase('./*').pattern, '*');
 
-    assert.equal(getBase('*').base, '');
+    assert.equal(getBase('*').base, '.');
     assert.equal(getBase('*').pattern, '*');
 
-    assert.equal(getBase('**').base, '');
+    assert.equal(getBase('**').base, '.');
     assert.equal(getBase('**').pattern, '**');
 
-    assert.equal(getBase('**/*.md').base, '');
+    assert.equal(getBase('**/*.md').base, '.');
     assert.equal(getBase('**/*.md').pattern, '**/*.md');
 
-    assert.equal(getBase('**/*.min.js').base, '');
+    assert.equal(getBase('**/*.min.js').base, '.');
     assert.equal(getBase('**/*.min.js').pattern, '**/*.min.js');
 
-    assert.equal(getBase('**/*foo.js').base, '');
+    assert.equal(getBase('**/*foo.js').base, '.');
     assert.equal(getBase('**/*foo.js').pattern, '**/*foo.js');
 
-    assert.equal(getBase('**/.*').base, '');
+    assert.equal(getBase('**/.*').base, '.');
     assert.equal(getBase('**/.*').pattern, '**/.*');
 
-    assert.equal(getBase('**/d').base, '');
+    assert.equal(getBase('**/d').base, '.');
     assert.equal(getBase('**/d').pattern, '**/d');
 
-    assert.equal(getBase('*.*').base, '');
+    assert.equal(getBase('*.*').base, '.');
     assert.equal(getBase('*.*').pattern, '*.*');
 
-    assert.equal(getBase('*.js').base, '');
+    assert.equal(getBase('*.js').base, '.');
     assert.equal(getBase('*.js').pattern, '*.js');
 
-    assert.equal(getBase('*.md').base, '');
+    assert.equal(getBase('*.md').base, '.');
     assert.equal(getBase('*.md').pattern, '*.md');
 
-    assert.equal(getBase('*.min.js').base, '');
+    assert.equal(getBase('*.min.js').base, '.');
     assert.equal(getBase('*.min.js').pattern, '*.min.js');
 
-    assert.equal(getBase('*/*').base, '');
+    assert.equal(getBase('*/*').base, '.');
     assert.equal(getBase('*/*').pattern, '*/*');
 
-    assert.equal(getBase('*/*/*/*').base, '');
+    assert.equal(getBase('*/*/*/*').base, '.');
     assert.equal(getBase('*/*/*/*').pattern, '*/*/*/*');
 
-    assert.equal(getBase('*/*/*/e').base, '');
+    assert.equal(getBase('*/*/*/e').base, '.');
     assert.equal(getBase('*/*/*/e').pattern, '*/*/*/e');
 
-    assert.equal(getBase('*/b/*/e').base, '');
+    assert.equal(getBase('*/b/*/e').base, '.');
     assert.equal(getBase('*/b/*/e').pattern, '*/b/*/e');
 
-    assert.equal(getBase('*b').base, '');
+    assert.equal(getBase('*b').base, '.');
     assert.equal(getBase('*b').pattern, '*b');
 
-    assert.equal(getBase('./a/**/j/**/z/*.md').base, 'a');
+    assert.equal(getBase('./a/**/j/**/z/*.md').base, './a');
     assert.equal(getBase('./a/**/j/**/z/*.md').pattern, '**/j/**/z/*.md');
 
-    assert.equal(getBase('./a/**/z/*.md').base, 'a');
+    assert.equal(getBase('./a/**/z/*.md').base, './a');
     assert.equal(getBase('./a/**/z/*.md').pattern, '**/z/*.md');
 
     assert.equal(getBase('./{a/b/{c,/foo.js}/e.f.g}').base, '.');
     assert.equal(getBase('./{a/b/{c,/foo.js}/e.f.g}').pattern, '{a/b/{c,/foo.js}/e.f.g}');
 
-    assert.equal(getBase('./node_modules/*-glob/**/*.js').base, 'node_modules');
+    assert.equal(getBase('./node_modules/*-glob/**/*.js').base, './node_modules');
     assert.equal(getBase('./node_modules/*-glob/**/*.js').pattern, '*-glob/**/*.js');
 
     assert.equal(getBase('a/b/{c,/.gitignore}').base, 'a/b');
@@ -152,14 +152,14 @@ describe('should get a base path:', function () {
     assert.equal(getBase('a/b/{c,d}/e/f.g').base, 'a/b');
     assert.equal(getBase('a/b/{c,d}/e/f.g').pattern, '{c,d}/e/f.g');
 
-    assert.equal(getBase('.a*').base, '');
+    assert.equal(getBase('.a*').base, '.');
     assert.equal(getBase('.a*').pattern, '.a*');
 
-    assert.equal(getBase('.b*').base, '');
+    assert.equal(getBase('.b*').base, '.');
     assert.equal(getBase('.b*').pattern, '.b*');
 
-    assert.equal(getBase('/*').base, '');
-    assert.equal(getBase('/*').pattern, '/*');
+    assert.equal(getBase('/*').base, '/');
+    assert.equal(getBase('/*').pattern, '*');
 
     assert.equal(getBase('a/***').base, 'a');
     assert.equal(getBase('a/***').pattern, '***');
@@ -225,46 +225,46 @@ describe('should get a base path:', function () {
   });
 
   it('negation pattern:', function () {
-    assert.equal(getBase('!*.min.js').base, '');
+    assert.equal(getBase('!*.min.js').base, '.');
     assert.equal(getBase('!*.min.js').pattern, '!*.min.js');
 
-    assert.equal(getBase('!foo').base, '');
+    assert.equal(getBase('!foo').base, '.');
     assert.equal(getBase('!foo').pattern, '!foo');
 
     assert.equal(getBase('a/b/c/!foo').base, 'a/b/c');
     assert.equal(getBase('a/b/c/!foo').pattern, '!foo');
 
-    assert.equal(getBase('!foo/(a|b).min.js').base, '');
+    assert.equal(getBase('!foo/(a|b).min.js').base, '.');
     assert.equal(getBase('!foo/(a|b).min.js').pattern, '!foo/(a|b).min.js');
 
-    assert.equal(getBase('!foo/[a-b].min.js').base, '');
+    assert.equal(getBase('!foo/[a-b].min.js').base, '.');
     assert.equal(getBase('!foo/[a-b].min.js').pattern, '!foo/[a-b].min.js');
 
-    assert.equal(getBase('!foo/{a,b}.min.js').base, '');
+    assert.equal(getBase('!foo/{a,b}.min.js').base, '.');
     assert.equal(getBase('!foo/{a,b}.min.js').pattern, '!foo/{a,b}.min.js');
   });
 
   describe('braces:', function () {
     it('should know when a base cannot be extracted:', function () {
-      assert.equal(getBase('/a/b/{c,/foo.js}/e.f.g/').base, '');
-      assert.equal(getBase('/a/b/{c,/foo.js}/e.f.g/').pattern, '/a/b/{c,/foo.js}/e.f.g/');
+      assert.equal(getBase('/a/b/{c,/foo.js}/e.f.g/').base, '/a/b');
+      assert.equal(getBase('/a/b/{c,/foo.js}/e.f.g/').pattern, '{c,/foo.js}/e.f.g/');
 
-      assert.equal(getBase('{a/b/c.js,/a/b/{c,/foo.js}/e.f.g/}').base, '');
+      assert.equal(getBase('{a/b/c.js,/a/b/{c,/foo.js}/e.f.g/}').base, '.');
       assert.equal(getBase('{a/b/c.js,/a/b/{c,/foo.js}/e.f.g/}').pattern, '{a/b/c.js,/a/b/{c,/foo.js}/e.f.g/}');
 
-      assert.equal(getBase('/a/b/{c,d}/').base, '');
-      assert.equal(getBase('/a/b/{c,d}/').pattern, '/a/b/{c,d}/');
+      assert.equal(getBase('/a/b/{c,d}/').base, '/a/b');
+      assert.equal(getBase('/a/b/{c,d}/').pattern, '{c,d}/');
 
-      assert.equal(getBase('/a/b/{c,d}/*.js').base, '');
-      assert.equal(getBase('/a/b/{c,d}/*.js').pattern, '/a/b/{c,d}/*.js');
+      assert.equal(getBase('/a/b/{c,d}/*.js').base, '/a/b');
+      assert.equal(getBase('/a/b/{c,d}/*.js').pattern, '{c,d}/*.js');
 
-      assert.equal(getBase('/a/b/{c,d}/*.min.js').base, '');
-      assert.equal(getBase('/a/b/{c,d}/*.min.js').pattern, '/a/b/{c,d}/*.min.js');
+      assert.equal(getBase('/a/b/{c,d}/*.min.js').base, '/a/b');
+      assert.equal(getBase('/a/b/{c,d}/*.min.js').pattern, '{c,d}/*.min.js');
 
-      assert.equal(getBase('/a/b/{c,d}/e.f.g/').base, '');
-      assert.equal(getBase('/a/b/{c,d}/e.f.g/').pattern, '/a/b/{c,d}/e.f.g/');
+      assert.equal(getBase('/a/b/{c,d}/e.f.g/').base, '/a/b');
+      assert.equal(getBase('/a/b/{c,d}/e.f.g/').pattern, '{c,d}/e.f.g/');
 
-      assert.equal(getBase('{.,*}').base, '');
+      assert.equal(getBase('{.,*}').base, '.');
       assert.equal(getBase('{.,*}').pattern, '{.,*}');
     });
 
@@ -337,19 +337,19 @@ describe('should get a base path:', function () {
   });
 
   it('character classes:', function () {
-    assert.equal(getBase('[a-c]b*').base, '');
+    assert.equal(getBase('[a-c]b*').base, '.');
     assert.equal(getBase('[a-c]b*').pattern, '[a-c]b*');
 
-    assert.equal(getBase('[a-j]*[^c]').base, '');
+    assert.equal(getBase('[a-j]*[^c]').base, '.');
     assert.equal(getBase('[a-j]*[^c]').pattern, '[a-j]*[^c]');
 
-    assert.equal(getBase('[a-j]*[^c]b/c').base, '');
+    assert.equal(getBase('[a-j]*[^c]b/c').base, '.');
     assert.equal(getBase('[a-j]*[^c]b/c').pattern, '[a-j]*[^c]b/c');
 
-    assert.equal(getBase('[a-j]*[^c]bc').base, '');
+    assert.equal(getBase('[a-j]*[^c]bc').base, '.');
     assert.equal(getBase('[a-j]*[^c]bc').pattern, '[a-j]*[^c]bc');
 
-    assert.equal(getBase('[ab][ab]').base, '');
+    assert.equal(getBase('[ab][ab]').base, '.');
     assert.equal(getBase('[ab][ab]').pattern, '[ab][ab]');
 
     assert.equal(getBase('foo/[a-b].min.js').base, 'foo');
@@ -357,25 +357,25 @@ describe('should get a base path:', function () {
   });
 
   it('qmarks:', function () {
-    assert.equal(getBase('?').base, '');
+    assert.equal(getBase('?').base, '.');
     assert.equal(getBase('?').pattern, '?');
 
-    assert.equal(getBase('?/?').base, '');
+    assert.equal(getBase('?/?').base, '.');
     assert.equal(getBase('?/?').pattern, '?/?');
 
-    assert.equal(getBase('??').base, '');
+    assert.equal(getBase('??').base, '.');
     assert.equal(getBase('??').pattern, '??');
 
-    assert.equal(getBase('???').base, '');
+    assert.equal(getBase('???').base, '.');
     assert.equal(getBase('???').pattern, '???');
 
-    assert.equal(getBase('?a').base, '');
+    assert.equal(getBase('?a').base, '.');
     assert.equal(getBase('?a').pattern, '?a');
 
-    assert.equal(getBase('?b').base, '');
+    assert.equal(getBase('?b').base, '.');
     assert.equal(getBase('?b').pattern, '?b');
 
-    assert.equal(getBase('a?b').base, '');
+    assert.equal(getBase('a?b').base, '.');
     assert.equal(getBase('a?b').pattern, 'a?b');
 
     assert.equal(getBase('a/?/c.js').base, 'a');

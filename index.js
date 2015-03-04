@@ -1,12 +1,13 @@
 /*!
  * parse-glob <https://github.com/jonschlinkert/parse-glob>
  *
- * Copyright (c) 2015 Jon Schlinkert.
- * Licensed under the MIT license.
+ * Copyright (c) 2015, Jon Schlinkert.
+ * Licensed under the MIT License.
  */
 
 'use strict';
 
+var findBase = require('glob-base');
 var pathRe = require('glob-path-regex');
 var isGlob = require('is-glob');
 
@@ -32,8 +33,8 @@ module.exports = function (pattern, getbase) {
 
 function parseGlob(pattern, getbase) {
   var glob = pattern;
-  var path = {};
   var tok = {path: {}, is: {}, match: {}};
+  var path = {};
 
   // store original pattern
   tok.original = pattern;
@@ -41,9 +42,9 @@ function parseGlob(pattern, getbase) {
   path.whole = tok.pattern;
 
   // Boolean values
-  tok.is.glob      = isGlob(glob);
-  tok.is.negated   = glob.charAt(0) === '!';
-  tok.is.globstar  = glob.indexOf('**') !== -1;
+  tok.is.glob = isGlob(glob);
+  tok.is.negated = glob.charAt(0) === '!';
+  tok.is.globstar = glob.indexOf('**') !== -1;
 
   var braces = glob.indexOf('{') !== -1;
   if (tok.is.glob && braces) {
@@ -93,7 +94,6 @@ function parseGlob(pattern, getbase) {
     }
 
     path.ext = path.extname.split('.').slice(-1)[0];
-
     // remove any escaping that was applied for braces
     if (braces) {
       path = unscapeBraces(path);
@@ -106,7 +106,7 @@ function parseGlob(pattern, getbase) {
 
   // get the `base` from glob pattern
   if (getbase) {
-    var segs = findBase(tok);
+    var segs = findBase(tok.pattern);
     tok.pattern = segs.pattern;
     tok.base = segs.base;
 
@@ -160,44 +160,6 @@ function unscapeBraces(path) {
 }
 
 /**
- * Extract the `base` path from a glob
- * pattern.
- *
- * @param  {Object} `tok` The tokens object
- * @return {Object}
- */
-
-function findBase(tok) {
-  var glob = tok.pattern;
-  var res = {base: '', pattern: glob};
-
-  var segs = glob.split('/');
-  var len = segs.length, i = 0;
-  var base = [];
-
-  while (len--) {
-    var seg = segs[i++];
-
-    if (!seg || isGlob(seg)) {
-      break;
-    }
-    base.push(seg);
-  }
-
-  if (i === 0) { return null; }
-
-  var num = (segs.length - base.length);
-  var end = base.join('/');
-  if (end.indexOf('./') === 0) {
-    end = end.slice(2);
-  }
-
-  res.base = end;
-  res.pattern = segs.slice(-num).join('/');
-  return res;
-}
-
-/**
  * Cache the glob string to avoid parsing the same
  * pattern more than once.
  *
@@ -238,12 +200,5 @@ function esc(str) {
 function unescape(str) {
   str = str.split('__ESC_SLASH__').join('/');
   str = str.split('__ESC_DOT__').join('.');
-  return str;
-}
-
-function trim(str, ch) {
-  if (str.slice(-ch.length)[0] === ch) {
-    return str.slice(0, str.length - ch.length);
-  }
   return str;
 }
