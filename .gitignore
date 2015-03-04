@@ -1,3 +1,4 @@
+*.DS_Store
 *.DS_store
 *.sublime-*
 _gh_pages
@@ -11,3 +12,4 @@ tmp
 TODO.md
 vendor
 support.js
+example.js
