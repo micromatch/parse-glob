@@ -26,7 +26,8 @@
     "node": ">=0.10.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "prepublish": "browserify -o browser.js -e index.js"
   },
   "dependencies": {
     "glob-base": "^0.1.0",
@@ -34,7 +35,36 @@
     "is-glob": "^1.1.0"
   },
   "devDependencies": {
+    "browserify": "^9.0.3",
     "lodash": "^3.3.1",
     "mocha": "*"
-  }
+  },
+  "keywords": [
+    "glob",
+    "match",
+    "bash",
+    "expand",
+    "expansion",
+    "expression",
+    "file",
+    "files",
+    "filter",
+    "find",
+    "glob",
+    "globbing",
+    "globs",
+    "globstar",
+    "match",
+    "matcher",
+    "matches",
+    "matching",
+    "path",
+    "pattern",
+    "patterns",
+    "regex",
+    "regexp",
+    "regular",
+    "shell",
+    "wildcard"
+  ]
 }
