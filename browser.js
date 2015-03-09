@@ -8,17 +8,16 @@
 
 'use strict';
 
-var findBase = require('glob-base');
-var pathRe = require('glob-path-regex');
 var isGlob = require('is-glob');
+var findBase = require('glob-base');
+var extglob = require('is-extglob');
+var dotfile = require('is-dotfile');
 
 /**
- * Expose `parseGlob` and cache results in memory
+ * Expose `cache`
  */
 
-module.exports = function (pattern, getbase) {
-  return globCache(parseGlob, pattern, getbase);
-};
+var cache = module.exports.cache = {};
 
 /**
  * Parse a glob pattern into tokens.
@@ -32,179 +31,239 @@ module.exports = function (pattern, getbase) {
  *  - `(**|*.js)`
  */
 
-function parseGlob(pattern, getbase) {
-  var glob = pattern;
-  var tok = {path: {}, is: {}, match: {}};
-  var path = {};
-
-  // store original pattern
-  tok.original = pattern;
-  tok.pattern = pattern;
-  path.whole = tok.pattern;
-
-  // Boolean values
-  tok.is.glob = isGlob(glob);
-  tok.is.negated = glob.charAt(0) === '!';
-  tok.is.globstar = glob.indexOf('**') !== -1;
-
-  var braces = glob.indexOf('{') !== -1;
-  if (tok.is.glob && braces) {
-    tok.is.braces = true;
-    glob = glob.substr(0, braces) + escape(glob.substr(braces));
+module.exports = function parseGlob(glob) {
+  if (cache.hasOwnProperty(glob)) {
+    return cache[glob];
   }
 
-  // if there is no `/` and no `**`, this means our
-  // pattern can only match file names
+  var tok = {};
+  tok.orig = glob;
+  tok.is = {};
+
+  // unescape dots and slashes in braces/brackets
+  glob = escape(glob);
+
+  var parsed = findBase(glob);
+  tok.is.glob = parsed.isGlob;
+
+  tok.glob = parsed.glob;
+  tok.base = parsed.base;
+  var segs = /([^\/]*)$/.exec(glob);
+
+  tok.path = {};
+  tok.path.dirname = '';
+  tok.path.basename = segs[1] || '';
+  tok.path.dirname = glob.split(tok.path.basename).join('') || '';
+  var basename = (tok.path.basename || '').split('.') || '';
+  tok.path.filename = basename[0] || '';
+  tok.path.extname = basename.slice(1).join('.') || '';
+  tok.path.ext = '';
+
+  if (isGlob(tok.path.dirname) && !tok.path.basename) {
+    if (!/\/$/.test(tok.glob)) {
+      tok.path.basename = tok.glob;
+    }
+    tok.path.dirname = tok.base;
+  }
+
   if (glob.indexOf('/') === -1 && !tok.is.globstar) {
-    path.dirname = '';
-    path.filename = tok.original;
-    tok.is.globstar = false;
-
-    var basename = /^([^.]*)/.exec(glob);
-    if (basename) {
-      path.basename = basename[0] || '';
-      path.extname = glob.substr(path.basename.length);
-    } else {
-      path.basename = tok.original;
-      path.extname = '';
-    }
-
-    path.ext = path.extname.split('.').slice(-1)[0];
-    if (braces) {
-      path.basename = unescape(path.basename);
-    }
-
-  // we either have a `/` or `**`
-  } else {
-    var m = pathRe().exec(glob) || [];
-    path.dirname = m[1];
-    path.filename = glob.substr(path.dirname.length);
-
-    // does the filename have a `.`?
-    var dot = path.filename.indexOf('.', 1);
-    if (dot !== -1) {
-      path.basename = path.filename.substr(0, dot);
-      path.extname = path.filename.substr(dot);
-      path.ext = path.extname.substr(path.extname.indexOf('.', 1));
-    } else if (path.filename.charAt(0) === '.') {
-      path.basename = '';
-      path.extname = path.filename;
-    } else {
-      path.basename = path.filename;
-      path.extname = '';
-    }
-
-    path.ext = path.extname.split('.').slice(-1)[0];
-    // remove any escaping that was applied for braces
-    if (braces) {
-      path = unscapeBraces(path);
-    }
+    tok.path.dirname = '';
+    tok.path.basename = tok.orig;
   }
 
-  tok.is.dotfile = path.filename.charAt(0) === '.';
-  tok = matchesDotdirs(tok, path);
-  tok.path = path;
-
-  // get the `base` from glob pattern
-  if (getbase) {
-    var segs = findBase(tok.pattern);
-    tok.pattern = segs.pattern;
-    tok.base = segs.base;
-
-    if (tok.is.glob === false) {
-      tok.base = tok.path.dirname;
-      tok.pattern = tok.path.filename;
-    }
+  var dot = tok.path.basename.indexOf('.');
+  if (dot !== -1) {
+    tok.path.filename = tok.path.basename.slice(0, dot);
+    tok.path.extname = tok.path.basename.slice(dot);
   }
-  return tok;
+
+  if (tok.path.extname.charAt(0) === '.') {
+    var exts = tok.path.extname.split('.');
+    tok.path.ext = exts[exts.length - 1];
+  }
+
+  // unescape dots and slashes in braces/brackets
+  tok.glob = unescape(tok.glob);
+  tok.path.dirname = unescape(tok.path.dirname);
+  tok.path.basename = unescape(tok.path.basename);
+  tok.path.filename = unescape(tok.path.filename);
+  tok.path.extname = unescape(tok.path.extname);
+
+  // Booleans
+  var is = (glob && tok.is.glob);
+  tok.is.negated  = glob && glob.charAt(0) === '!';
+  tok.is.extglob  = glob && extglob(glob);
+  tok.is.braces   = has(is, glob, '{');
+  tok.is.brackets = has(is, glob, '[:');
+  tok.is.globstar = has(is, glob, '**');
+  tok.is.dotfile  = dotfile(tok.path.basename);
+  tok.is.dotdir   = dotdir(tok.path.dirname);
+  return (cache[glob] = tok);
 }
 
 /**
- * Updates the tokens to reflect if the pattern
- * matches dot-directories
+ * Returns true if the glob matches dot-directories.
  *
  * @param  {Object} `tok` The tokens object
  * @param  {Object} `path` The path object
  * @return {Object}
  */
 
-function matchesDotdirs(tok, path) {
-  tok.is.dotdir = false;
-  if (path.dirname.indexOf('/.') !== -1) {
-    tok.is.dotdir = true;
+function dotdir(base) {
+  if (base.indexOf('/.') !== -1) {
+    return true;
   }
-  if (path.dirname.charAt(0) === '.' && path.dirname.charAt(1) !== '/') {
-    tok.is.dotdir = true;
+  if (base.charAt(0) === '.' && base.charAt(1) !== '/') {
+    return true;
   }
-  return tok;
+  return false;
 }
 
 /**
- * Unescape brace patterns in each segment on the
- * `path` object.
+ * Returns true if the pattern has the given `ch`aracter(s)
  *
- * TODO: this can be reduced by only escaping/unescaping
- * segments that need to be escaped based on whether
- * or not the pattern has a directory in it.
- *
- * @param  {Object} `path`
+ * @param  {Object} `glob` The glob pattern.
+ * @param  {Object} `ch` The character to test for
  * @return {Object}
  */
 
-function unscapeBraces(path) {
-  path.dirname = path.dirname ? unescape(path.dirname) : '';
-  path.filename = path.filename ? unescape(path.filename) : '';
-  path.basename = path.basename ? unescape(path.basename) : '';
-  path.extname = path.extname ? unescape(path.extname) : '';
-  path.ext = path.ext ? unescape(path.ext) : '';
-  return path;
+function has(is, glob, ch) {
+  return is && glob.indexOf(ch) !== -1;
 }
-
-/**
- * Cache the glob string to avoid parsing the same
- * pattern more than once.
- *
- * @param  {Function} fn
- * @param  {String} pattern
- * @param  {Options} options
- * @return {RegExp}
- */
-
-function globCache(fn, pattern, getbase) {
-  var key = pattern + (getbase || '');
-  return cache[key] || (cache[key] = fn(pattern, getbase));
-}
-
-/**
- * Expose the glob `cache`
- */
-
-var cache = module.exports.cache = {};
 
 /**
  * Escape/unescape utils
  */
 
 function escape(str) {
-  return str.replace(/.*\{([^}]*?)}.*$/g, function (match, inner) {
-    if (!inner) { return match; }
-    return match.split(inner).join(esc(inner));
+  var re = /\{([^{}]*?)}|\(([^()]*?)\)|\[([^\[\]]*?)\]/g;
+  return str.replace(re, function (outter, inner) {
+    if (!inner) { return outter; }
+    return outter.split(inner).join(esc(inner));
   });
 }
 
 function esc(str) {
-  str = str.split('/').join('__ESC_SLASH__');
-  str = str.split('.').join('__ESC_DOT__');
+  str = str.split('/').join('__SLASH__');
+  str = str.split('.').join('__DOT__');
   return str;
 }
 
 function unescape(str) {
-  str = str.split('__ESC_SLASH__').join('/');
-  str = str.split('__ESC_DOT__').join('.');
+  str = str.split('__SLASH__').join('/');
+  str = str.split('__DOT__').join('.');
   return str;
 }
 
-},{"glob-base":4,"glob-path-regex":7,"is-glob":8}],2:[function(require,module,exports){
+},{"glob-base":2,"is-dotfile":5,"is-extglob":6,"is-glob":7}],2:[function(require,module,exports){
+/*!
+ * glob-base <https://github.com/jonschlinkert/glob-base>
+ *
+ * Copyright (c) 2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+'use strict';
+
+var path = require('path');
+var parent = require('glob-parent');
+
+module.exports = function globBase(pattern) {
+  if (typeof pattern !== 'string') {
+    throw new TypeError('glob-base expects a string.');
+  }
+
+  var res = {};
+  res.base = parent(pattern);
+  res.isGlob = res.base !== pattern;
+
+  if (res.base !== '.') {
+    res.glob = pattern.substr(res.base.length);
+    if (res.glob.charAt(0) === '/') {
+      res.glob = res.glob.substr(1);
+    }
+  } else {
+    res.glob = pattern;
+  }
+
+  if (!res.isGlob) {
+    res.base = dirname(pattern);
+    res.glob = res.base !== '.'
+      ? pattern.substr(res.base.length)
+      : pattern;
+  }
+
+  if (res.glob.substr(0, 2) === './') {
+    res.glob = res.glob.substr(2);
+  }
+  if (res.glob.charAt(0) === '/') {
+    res.glob = res.glob.substr(1);
+  }
+  return res;
+};
+
+function dirname(glob) {
+  if (glob.slice(-1) === '/') return glob;
+  return path.dirname(glob);
+}
+
+},{"glob-parent":3,"path":8}],3:[function(require,module,exports){
+'use strict';
+
+var path = require('path');
+var isglob = require('is-glob');
+
+module.exports = function globParent(str) {
+	while (isglob(str)) str = path.dirname(str);
+	return str;
+};
+
+},{"is-glob":4,"path":8}],4:[function(require,module,exports){
+/*!
+ * is-glob <https://github.com/jonschlinkert/is-glob>
+ *
+ * Copyright (c) 2014-2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+module.exports = function isGlob(str) {
+  return typeof str === 'string'
+    && /[!*{}?(|)[\]]/.test(str);
+};
+
+},{}],5:[function(require,module,exports){
+/*!
+ * is-dotfile <https://github.com/regexps/is-dotfile>
+ *
+ * Copyright (c) 2015 Jon Schlinkert, contributors.
+ * Licensed under the MIT license.
+ */
+
+module.exports = function(str) {
+  if (str.charCodeAt(0) === 46 /* . */ && str.indexOf('/', 1) === -1) {
+    return true;
+  }
+
+  var last = str.lastIndexOf('/');
+  return last !== -1 ? str.charCodeAt(last + 1) === 46  /* . */ : false;
+};
+
+},{}],6:[function(require,module,exports){
+/*!
+ * is-extglob <https://github.com/jonschlinkert/is-extglob>
+ *
+ * Copyright (c) 2014-2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+module.exports = function isExtglob(str) {
+  return typeof str === 'string'
+    && /[@?!+*]\(/.test(str);
+};
+
+},{}],7:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"dup":4}],8:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -432,7 +491,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":3}],3:[function(require,module,exports){
+},{"_process":9}],9:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -491,107 +550,5 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 process.umask = function() { return 0; };
-
-},{}],4:[function(require,module,exports){
-/*!
- * glob-base <https://github.com/jonschlinkert/glob-base>
- *
- * Copyright (c) 2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-'use strict';
-
-var path = require('path');
-var isGlob = require('is-glob');
-var parent = require('glob-parent');
-
-module.exports = function globBase(glob) {
-  if (typeof glob !== 'string') {
-    throw new TypeError('glob-base expects a string.');
-  }
-
-  var res = {};
-  res.base = parent(glob);
-
-  if (res.base !== '.') {
-    res.pattern = glob.substr(res.base.length);
-    if (res.pattern.charAt(0) === '/') {
-      res.pattern = res.pattern.substr(1);
-    }
-  } else {
-    res.pattern = glob;
-  }
-
-  if (res.base === glob) {
-    res.base = dirname(glob);
-    res.pattern = res.base === '.' ? glob : glob.substr(res.base.length);
-  }
-
-  if (res.pattern.substr(0, 2) === './') {
-    res.pattern = res.pattern.substr(2);
-  }
-
-  if (res.pattern.charAt(0) === '/') {
-    res.pattern = res.pattern.substr(1);
-  }
-  return res;
-}
-
-function dirname(glob) {
-  if (glob[glob.length - 1] === '/') {
-    return glob;
-  }
-  return path.dirname(glob);
-}
-
-},{"glob-parent":5,"is-glob":6,"path":2}],5:[function(require,module,exports){
-'use strict';
-
-var path = require('path');
-var isglob = require('is-glob');
-
-module.exports = function globParent(str) {
-	while (isglob(str)) str = path.dirname(str);
-	return str;
-};
-
-},{"is-glob":6,"path":2}],6:[function(require,module,exports){
-/*!
- * is-glob <https://github.com/jonschlinkert/is-glob>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-module.exports = function isGlob(str) {
-  return typeof str === 'string'
-    && /[!*{}?(|)[\]]/.test(str);
-};
-
-},{}],7:[function(require,module,exports){
-/*!
- * glob-path-regex <https://github.com/regexps/glob-path-regex>
- *
- * Copyright (c) 2014-2015 Jon Schlinkert.
- * Licensed under the MIT license.
- */
-
-module.exports = function globPathRegex() {
-  return /^(.*?)(([\w*]*|[.\\*]*\{[^}]*\})((\.([\w*]*))*))$/;
-};
-
-},{}],8:[function(require,module,exports){
-/*!
- * is-glob <https://github.com/jonschlinkert/is-glob>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License
- */
-
-module.exports = function isGlob(str) {
-  return typeof str === 'string'
-    && /[!*{}?(|)[\]]/.test(str);
-};
 
 },{}]},{},[1]);
