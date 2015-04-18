@@ -332,6 +332,12 @@ describe('should get a base path:', function () {
   });
 
   it('character classes:', function () {
+    assert.equal(parse('/[.]bashrc').base, '/');
+    assert.equal(parse('/[.]bashrc').glob, '[.]bashrc');
+    assert.equal(parse('/[.]bashrc').path.basename, '[.]bashrc');
+    assert.equal(parse('/[.]bashrc').path.filename, '[.]bashrc');
+    assert.equal(parse('/[.]bashrc').path.extname, '');
+
     assert.equal(parse('[a-c]b*').base, '.');
     assert.equal(parse('[a-c]b*').glob, '[a-c]b*');
 

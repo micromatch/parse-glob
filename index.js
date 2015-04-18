@@ -136,7 +136,8 @@ function has(is, glob, ch) {
 
 function escape(str) {
   var re = /\{([^{}]*?)}|\(([^()]*?)\)|\[([^\[\]]*?)\]/g;
-  return str.replace(re, function (outter, inner) {
+  return str.replace(re, function (outter, braces, parens, brackets) {
+    var inner = braces || parens || brackets;
     if (!inner) { return outter; }
     return outter.split(inner).join(esc(inner));
   });
