@@ -1,7 +1,7 @@
 {
   "name": "parse-glob",
   "description": "Parse a glob pattern into an object of tokens.",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "homepage": "https://github.com/jonschlinkert/parse-glob",
   "author": {
     "name": "Jon Schlinkert",
