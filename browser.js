@@ -156,7 +156,7 @@ function unescape(str) {
   return str;
 }
 
-},{"glob-base":4,"is-dotfile":7,"is-extglob":8,"is-glob":9}],2:[function(require,module,exports){
+},{"glob-base":4,"is-dotfile":6,"is-extglob":7,"is-glob":8}],2:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -456,6 +456,7 @@ process.umask = function() { return 0; };
 
 var path = require('path');
 var parent = require('glob-parent');
+var isGlob = require('is-glob');
 
 module.exports = function globBase(pattern) {
   if (typeof pattern !== 'string') {
@@ -464,7 +465,7 @@ module.exports = function globBase(pattern) {
 
   var res = {};
   res.base = parent(pattern);
-  res.isGlob = res.base !== pattern;
+  res.isGlob = isGlob(pattern);
 
   if (res.base !== '.') {
     res.glob = pattern.substr(res.base.length);
@@ -496,31 +497,19 @@ function dirname(glob) {
   return path.dirname(glob);
 }
 
-},{"glob-parent":5,"path":2}],5:[function(require,module,exports){
+},{"glob-parent":5,"is-glob":8,"path":2}],5:[function(require,module,exports){
 'use strict';
 
 var path = require('path');
 var isglob = require('is-glob');
 
 module.exports = function globParent(str) {
-	while (isglob(str)) str = path.dirname(str);
+	str += 'a'; // preserves full path in case of trailing path separator
+	do {str = path.dirname(str)} while (isglob(str));
 	return str;
 };
 
-},{"is-glob":6,"path":2}],6:[function(require,module,exports){
-/*!
- * is-glob <https://github.com/jonschlinkert/is-glob>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-module.exports = function isGlob(str) {
-  return typeof str === 'string'
-    && /[!*{}?(|)[\]]/.test(str);
-};
-
-},{}],7:[function(require,module,exports){
+},{"is-glob":8,"path":2}],6:[function(require,module,exports){
 /*!
  * is-dotfile <https://github.com/regexps/is-dotfile>
  *
@@ -537,7 +526,7 @@ module.exports = function(str) {
   return last !== -1 ? str.charCodeAt(last + 1) === 46  /* . */ : false;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /*!
  * is-extglob <https://github.com/jonschlinkert/is-extglob>
  *
@@ -550,6 +539,16 @@ module.exports = function isExtglob(str) {
     && /[@?!+*]\(/.test(str);
 };
 
-},{}],9:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}]},{},[1]);
+},{}],8:[function(require,module,exports){
+/*!
+ * is-glob <https://github.com/jonschlinkert/is-glob>
+ *
+ * Copyright (c) 2014-2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+module.exports = function isGlob(str) {
+  return typeof str === 'string'
+    && /[@!*+{}?(|)[\]]/.test(str);
+};
+},{}]},{},[1]);
