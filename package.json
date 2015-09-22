@@ -3,21 +3,12 @@
   "description": "Parse a glob pattern into an object of tokens.",
   "version": "3.0.3",
   "homepage": "https://github.com/jonschlinkert/parse-glob",
-  "author": {
-    "name": "Jon Schlinkert",
-    "url": "https://github.com/jonschlinkert"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/jonschlinkert/parse-glob.git"
-  },
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "jonschlinkert/parse-glob",
   "bugs": {
     "url": "https://github.com/jonschlinkert/parse-glob/issues"
   },
-  "license": {
-    "type": "MIT",
-    "url": "https://github.com/jonschlinkert/parse-glob/blob/master/LICENSE"
-  },
+  "license": "MIT",
   "files": [
     "index.js"
   ],
